@@ -76,6 +76,12 @@ export function trailingMonths(
   return Array.from({ length: n }, (_, i) => addMonths(endMonth, i - (n - 1)));
 }
 
+/** Shift a 'YYYY-MM-DD' day by delta days (pure UTC calendar math). */
+export function addDays(date: string, delta: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
+}
+
 /** Human label for a 'YYYY-MM-DD' day, e.g. "Mon, 6 Jul". */
 export function dayLabel(date: string): string {
   const [y, m, d] = date.split("-").map(Number);

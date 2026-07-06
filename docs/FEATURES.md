@@ -35,6 +35,7 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
 - **Month navigation** via `?month=YYYY-MM` (defaults to the current IST month). Prev/next controls step with `addMonths`; the heading uses `monthLabel` ("July 2026").
 - **Category filter** via `?category=<key>` — a horizontal chip row ("All" + the six categories with color dots) filters the list and the month total to one category. The filter survives month navigation and edit/cancel round-trips; the dashboard pie legend links here pre-filtered.
 - **Add** lives on its own page, **`/add`** (navbar "Add" button with a plus icon) — amount (₹ input parsed by `rupeesToPaise`), category (one of six), optional note, date (`occurred_on`, defaults to `istToday()`). Server action zod-validates (amount > 0, category in enum), scopes to the session user, inserts, `revalidatePath`. The list page itself has no add card.
+- **Date entry** uses the themed `DateField` (`src/components/forms/DateField.tsx`): Today / Yesterday quick chips plus an in-flow cream calendar (no native `<input type="date">` — its browser popup can't be styled and spills the layout). Future dates disabled; submits a hidden `occurredOn`.
 - **Edit** — the same form renders inline on the list page via `?edit=<id>`, pre-filled; updates scoped `AND user_id = ?`.
 - **Delete** — removes the entry, scoped `AND user_id = ?`, with confirmation.
 

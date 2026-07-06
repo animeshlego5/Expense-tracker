@@ -100,6 +100,8 @@ export function CategoryPie({
                   ))}
                 </Pie>
                 <Tooltip
+                  // Paint above the absolutely-positioned center-total overlay.
+                  wrapperStyle={{ zIndex: 10 }}
                   content={({ active, payload }) => {
                     if (!active || !payload || payload.length === 0) return null;
                     const item = payload[0];

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { addExpense, updateExpense, type FormState } from "@/actions/expenses";
+import { DateField } from "@/components/forms/DateField";
 import { CATEGORIES, type ExpenseCategory } from "@/lib/categories";
 
 type Initial = {
@@ -108,18 +109,8 @@ export function ExpenseForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="occurredOn" className={labelClass}>
-          Date
-        </label>
-        <input
-          id="occurredOn"
-          name="occurredOn"
-          type="date"
-          required
-          max={today}
-          defaultValue={initial?.occurredOn ?? today}
-          className={inputClass}
-        />
+        <span className={labelClass}>Date</span>
+        <DateField name="occurredOn" today={today} initial={initial?.occurredOn} />
       </div>
 
       {error && (
