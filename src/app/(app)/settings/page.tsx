@@ -1,5 +1,7 @@
 import { eq } from "drizzle-orm";
 import { BudgetForm } from "@/components/forms/BudgetForm";
+import { IncomeTargetForm } from "@/components/forms/IncomeTargetForm";
+import { StudentToggle } from "@/components/forms/StudentToggle";
 import { SignOutButton } from "@/components/nav/SignOutButton";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema";
@@ -15,6 +17,8 @@ export default async function SettingsPage() {
     .from(userSettings)
     .where(eq(userSettings.userId, userId));
   const budgetPaise = settings?.monthlyBudgetPaise ?? DEFAULT_BUDGET_PAISE;
+  const incomeTargetPaise = settings?.monthlyIncomeTargetPaise ?? null;
+  const hideIncome = settings?.hideIncome ?? false;
 
   return (
     <div className="flex flex-col gap-5">
@@ -26,6 +30,10 @@ export default async function SettingsPage() {
       </section>
 
       <BudgetForm currentPaise={budgetPaise} />
+
+      <StudentToggle initial={hideIncome} />
+
+      {!hideIncome && <IncomeTargetForm currentPaise={incomeTargetPaise} />}
 
       <SignOutButton />
     </div>

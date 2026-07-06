@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   index,
   integer,
@@ -56,6 +57,11 @@ export const userSettings = pgTable("user_settings", {
   monthlyBudgetPaise: integer("monthly_budget_paise")
     .notNull()
     .default(DEFAULT_BUDGET_PAISE),
+  // Expected income per month; null = unset. Actual income above this renders
+  // as a gain on the dashboard.
+  monthlyIncomeTargetPaise: integer("monthly_income_target_paise"),
+  // Student mode: hides income tracking everywhere (dashboard, navbar, settings).
+  hideIncome: boolean("hide_income").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

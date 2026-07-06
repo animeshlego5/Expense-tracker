@@ -1,6 +1,6 @@
 # Expense Tracker — Project Memory
 
-Mobile-first, multi-user expense tracker. Users sign up / log in (email + password, 60-day sliding sessions) and log daily expenses in 6 fixed categories (Food, Travel, Rent, Bills, Subscriptions, Miscellaneous) plus income entries. One dashboard shows spend this month, income this month, a category donut, a 6-month income-vs-expense bar chart, recent expenses, and a budget banner. Budget defaults to ₹20,000/month (per-user configurable). Goal: keep monthly spend under budget. Money is stored as integer **paise**; all dates are **IST** (Asia/Kolkata).
+Mobile-first, multi-user expense tracker. Users sign up / log in (email + password, 60-day sliding sessions) and log daily expenses in 6 fixed categories (Food, Travel, Rent, Bills, Subscriptions, Other) plus income entries. One dashboard shows spend this month (with a day-progress hint like `7/31`), income this month (green + gain bracket when above the user's income target), a red/green "On pace for" projection, a category donut (labels toggle % ↔ names), recent expenses, and a 6-month income-vs-expense bar chart at the bottom, plus a budget banner. Budget defaults to ₹20,000/month (per-user configurable). **Student mode** (`user_settings.hide_income`) hides income tracking everywhere. Typeface: Hanken Grotesk via `next/font`. Money is stored as integer **paise**; all dates are **IST** (Asia/Kolkata).
 
 ## Commands
 
@@ -30,7 +30,7 @@ Mobile-first, multi-user expense tracker. Users sign up / log in (email + passwo
 
 - **Money = integer paise.** Never store or compute money as floats. `₹20,000 = 2_000_000` paise. Convert at the UI boundary only, via `src/lib/currency.ts` (`formatPaise`, `formatPaiseCompact`, `rupeesToPaise`).
 - **Dates = IST, always via `src/lib/dates.ts`.** Never `new Date().toISOString().slice(0,10)` — Vercel runs UTC and IST evenings land on the wrong day. Use `istToday`, `istCurrentMonth`, `istDayOfMonth`, `monthRange`, etc. Month ranges are **half-open** `[start, nextMonthStart)`.
-- **Fixed category palette (never reassign).** Colors/labels/keys live in `src/lib/categories.ts` and `@theme`. Food `#2a78d6`, Travel `#1baf7a`, Rent `#eda100`, Bills `#008300`, Subscriptions `#4a3aa7`, Miscellaneous `#e34948`. Status colors (warning `#fab219`, critical `#d03b3b`) are for alerts only — charts never reuse them.
+- **Fixed category palette (never reassign).** Colors/labels/keys live in `src/lib/categories.ts` and `@theme`. Food `#2a78d6`, Travel `#1baf7a`, Rent `#eda100`, Bills `#008300`, Subscriptions `#4a3aa7`, Other `#e34948` (DB enum key stays `miscellaneous`). Status colors (warning `#fab219`, critical `#d03b3b`) are for alerts only — charts never reuse them; `positive` green `#008300` marks money-positive numbers (shared with income by convention).
 - **RSC reads, server actions write.** Async server components read via Drizzle directly. Mutations are `"use server"` actions: zod-validate input → derive `userId` from the session (never trust the client) → write → `revalidatePath`.
 - **Scope every query by user.** Every SELECT/UPDATE/DELETE filters `user_id = <session user>`. Every UPDATE/DELETE adds `AND user_id = ?` so one user can't touch another's rows.
 - **`nextCookies()` is the LAST Better Auth plugin.** Order matters — it must run last to set cookies on responses.

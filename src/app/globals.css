@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  /* Typeface (loaded via next/font in the root layout) */
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+
   /* Cream surface system */
   --color-cream: #faf6ec;
   --color-surface: #fffcf5;
@@ -19,4 +22,6 @@
   /* Status colors — reserved for alerts, never reused by charts */
   --color-warning: #fab219;
   --color-critical: #d03b3b;
+  /* Money-positive (shared with income green by convention) */
+  --color-positive: #008300;
 }

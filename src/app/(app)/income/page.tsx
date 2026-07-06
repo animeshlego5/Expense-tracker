@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { and, desc, eq, gte, lt } from "drizzle-orm";
 import { deleteIncome } from "@/actions/income";
 import { IncomeForm } from "@/components/forms/IncomeForm";
 import { db } from "@/db";
-import { incomes } from "@/db/schema";
+import { incomes, userSettings } from "@/db/schema";
 import { formatPaise } from "@/lib/currency";
 import {
   addMonths,
@@ -24,6 +25,16 @@ export default async function IncomePage({
 }) {
   const session = await requireUser();
   const userId = session.user.id;
+
+  // Student mode hides income tracking entirely.
+  const [settings] = await db
+    .select({ hideIncome: userSettings.hideIncome })
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId));
+  if (settings?.hideIncome) {
+    redirect("/dashboard");
+  }
+
   const sp = await searchParams;
   const month = sp.month && MONTH_RE.test(sp.month) ? sp.month : istCurrentMonth();
   const { start, end } = monthRange(month);

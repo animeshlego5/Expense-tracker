@@ -75,3 +75,4 @@ No external services required.
   ```
 
 - **Run scripts under Node, not Bun.** PGlite's WASM aborts under Bun on Windows; use `bunx tsx scripts/seed.ts <email>` (tsx runs on Node). The dev server is unaffected (Next runs on Node).
+- **`bun run db:push` against PGlite is not data-preserving.** Schema changes can recreate tables and drop existing rows (observed when adding columns to `user_settings`). Fine locally — data is throwaway; re-seed afterwards. Against Neon, drizzle-kit uses proper `ALTER`s.

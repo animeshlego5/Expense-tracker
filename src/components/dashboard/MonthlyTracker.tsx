@@ -19,7 +19,13 @@ interface MonthDatum {
   expensePaise: number;
 }
 
-export function MonthlyTracker({ data }: { data: MonthDatum[] }) {
+export function MonthlyTracker({
+  data,
+  showIncome = true,
+}: {
+  data: MonthDatum[];
+  showIncome?: boolean;
+}) {
   return (
     <section className="rounded-2xl border border-hairline bg-surface p-4">
       <h2 className="text-base font-semibold text-ink">Last 6 months</h2>
@@ -72,13 +78,15 @@ export function MonthlyTracker({ data }: { data: MonthDatum[] }) {
               }}
             />
             <Legend />
-            <Bar
-              dataKey="incomePaise"
-              name="Income"
-              fill="#008300"
-              radius={[4, 4, 0, 0]}
-              maxBarSize={24}
-            />
+            {showIncome && (
+              <Bar
+                dataKey="incomePaise"
+                name="Income"
+                fill="#008300"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={24}
+              />
+            )}
             <Bar
               dataKey="expensePaise"
               name="Expenses"

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Cell,
   Pie,
@@ -18,6 +18,8 @@ interface Slice {
   color: string;
 }
 
+type LabelMode = "percent" | "name";
+
 const RADIAN = Math.PI / 180;
 
 export function CategoryPie({
@@ -29,9 +31,32 @@ export function CategoryPie({
   totalPaise: number;
   totalLabel: string;
 }) {
+  const [labelMode, setLabelMode] = useState<LabelMode>("percent");
+
   return (
     <section className="rounded-2xl border border-hairline bg-surface p-4">
-      <h2 className="text-base font-semibold text-ink">Where it went</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-ink">Where it went</h2>
+        {totalPaise > 0 && (
+          <button
+            type="button"
+            aria-label={
+              labelMode === "percent"
+                ? "Show category names on the chart"
+                : "Show percentages on the chart"
+            }
+            title={
+              labelMode === "percent" ? "Show names" : "Show percentages"
+            }
+            onClick={() =>
+              setLabelMode((m) => (m === "percent" ? "name" : "percent"))
+            }
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline text-sm font-semibold text-ink-soft transition-colors hover:text-ink"
+          >
+            {labelMode === "percent" ? "%" : "Aa"}
+          </button>
+        )}
+      </div>
 
       {totalPaise <= 0 ? (
         <div className="flex h-64 flex-col items-center justify-center gap-3">
@@ -55,7 +80,9 @@ export function CategoryPie({
                   startAngle={90}
                   endAngle={-270}
                   labelLine={false}
-                  label={renderPercentLabel}
+                  label={(props: PieLabelRenderProps) =>
+                    renderSliceLabel(props, labelMode)
+                  }
                   isAnimationActive={false}
                 >
                   {data.map((slice) => (
@@ -123,8 +150,12 @@ export function CategoryPie({
   );
 }
 
-// Percentage label, drawn only on slices >= 8% of the total, in ink (not slice color).
-function renderPercentLabel(props: PieLabelRenderProps): ReactNode {
+// Slice label drawn only on slices >= 8% of the total, in ink (not slice color).
+// Shows either the percentage or the category name, per the header toggle.
+function renderSliceLabel(
+  props: PieLabelRenderProps,
+  mode: LabelMode
+): ReactNode {
   const percent = typeof props.percent === "number" ? props.percent : 0;
   if (percent < 0.08) return null;
 
@@ -137,6 +168,9 @@ function renderPercentLabel(props: PieLabelRenderProps): ReactNode {
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
+  const text =
+    mode === "percent" ? `${Math.round(percent * 100)}%` : String(props.name ?? "");
+
   return (
     <text
       x={x}
@@ -144,10 +178,10 @@ function renderPercentLabel(props: PieLabelRenderProps): ReactNode {
       fill="#1f1d1a"
       textAnchor="middle"
       dominantBaseline="central"
-      fontSize={12}
+      fontSize={mode === "percent" ? 12 : 11}
       fontWeight={600}
     >
-      {Math.round(percent * 100)}%
+      {text}
     </text>
   );
 }

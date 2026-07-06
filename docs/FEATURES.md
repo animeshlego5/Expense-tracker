@@ -15,17 +15,18 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
 
 1. **Budget banner** — only rendered in the `at-risk` or `over` states (see Budget alerts). Warning styling for at-risk, critical for over.
 2. **KPI row**
-   - **Hero: "Spent this month"** — total expense for the current IST month, large.
-   - **"Income this month"** — total income for the current IST month.
-   - When in the grace window (days 1–2) with a projection, the **projected month-end spend** is shown as a stat here even though no banner appears.
+   - **Hero: "Spent this month"** — total expense for the current IST month, large, with a **day-progress hint** next to the label: `daysElapsed/daysInMonth` (e.g. `7/31`).
+   - **"Income this month"** — total income for the current IST month. Hidden entirely in student mode. If an **income target** is set and actual income exceeds it, the number renders **green** with a trailing bracket showing the gain, e.g. `₹45,000 (+₹5,000)`.
+   - **"On pace for"** — the projected month-end spend, always shown: **red with an up-arrow icon** when the projection exceeds the budget, **green** when on track.
 3. **Category donut** — expense distribution by category for the month.
    - Center of the donut shows the **total spent** for the month.
-   - Slice labels: percentage shown on slices that are **≥ 8%** of the total (smaller slices stay unlabeled to avoid clutter).
+   - Header has an **icon-only toggle button** switching slice labels between **percentages** (default) and **category names**.
+   - Slice labels appear only on slices that are **≥ 8%** of the total (smaller slices stay unlabeled to avoid clutter).
    - Legend: one row per category present, each with the category color swatch, label, **₹ amount and its %** of the month's spend.
-   - Slice/legend colors are the fixed category palette, never reassigned.
+   - Slice/legend colors are the fixed category palette, never reassigned. "Other" is the display label for the `miscellaneous` enum key.
    - Empty month → a friendly empty state instead of an empty chart.
-4. **6-month income vs. expense bar chart** — the trailing 6 IST months (`trailingMonths(6)`), oldest → newest, each month a grouped/paired income and expense bar. X-axis uses `monthShortLabel` ("Jul"); Y-axis ticks use `formatPaiseCompact` ("₹20K").
-5. **Recent expenses** — the 5 most recent expenses (by `occurred_on`, then recency), each showing category color/label, note, day, and amount. Links through to the expenses page.
+4. **Recent expenses** — the 5 most recent expenses (by `occurred_on`, then recency), each showing category color/label, note, day, and amount. Links through to the expenses page.
+5. **6-month income vs. expense bar chart** (bottom of page) — the trailing 6 IST months (`trailingMonths(6)`), oldest → newest, each month a grouped/paired income and expense bar. X-axis uses `monthShortLabel` ("Jul"); Y-axis ticks use `formatPaiseCompact` ("₹20K"). In student mode the income series is omitted.
 
 ## Expenses (`/expenses`)
 
@@ -37,11 +38,13 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
 
 ## Income (`/income`)
 
-Same structure as expenses, but each entry has a free-text **source** (e.g. "Salary", "Freelance") instead of a category. Add / edit / delete and `?month=` navigation behave identically.
+Same structure as expenses, but each entry has a free-text **source** (e.g. "Salary", "Freelance") instead of a category. Add / edit / delete and `?month=` navigation behave identically. In student mode this page redirects to `/dashboard`.
 
 ## Settings (`/settings`)
 
 - **Edit monthly budget** — rupee input parsed to paise via `rupeesToPaise`, validated (> 0), upserted into `user_settings` scoped to the session user, then `revalidatePath('/dashboard')` so the banner reflects the new budget immediately.
+- **Student mode toggle** — for users on variable pocket money: sets `user_settings.hide_income`. When ON, income disappears everywhere: the dashboard income tile, the income series in the 6-month chart, the Income tab in the navbar, the `/income` page (redirects), and the income-target form below. Only budget tracking remains.
+- **Expected monthly income** (hidden in student mode) — sets `user_settings.monthly_income_target_paise`; empty input clears it. Actual income above this shows as a green gain on the dashboard.
 - **Sign out** — ends the session and redirects to `/login`.
 
 ## Budget alerts

@@ -109,7 +109,10 @@ export default async function DashboardPage() {
 
   const spendPaise = Number(expenseTotalRows[0]?.total ?? 0);
   const incomePaise = Number(incomeTotalRows[0]?.total ?? 0);
-  const budgetPaise = settingsRows[0]?.monthlyBudgetPaise ?? DEFAULT_BUDGET_PAISE;
+  const settings = settingsRows[0];
+  const budgetPaise = settings?.monthlyBudgetPaise ?? DEFAULT_BUDGET_PAISE;
+  const incomeTargetPaise = settings?.monthlyIncomeTargetPaise ?? null;
+  const hideIncome = settings?.hideIncome ?? false;
 
   // Category slices in fixed CATEGORIES order, only those with spend.
   const categoryTotals = new Map<string, number>();
@@ -139,16 +142,23 @@ export default async function DashboardPage() {
     expensePaise: expenseByMonth.get(m) ?? 0,
   }));
 
+  const daysElapsed = istDayOfMonth();
+  const totalDays = daysInMonth(month);
   const budget = computeBudget({
     spendPaise,
     budgetPaise,
-    daysElapsed: istDayOfMonth(),
-    daysInMonth: daysInMonth(month),
+    daysElapsed,
+    daysInMonth: totalDays,
   });
 
-  const onTrack = budget.status === "ok";
-  const paceLabel = onTrack ? "Remaining budget" : "On pace for";
-  const paceValue = onTrack ? budgetPaise - spendPaise : budget.projectedPaise;
+  // Red + up-arrow whenever the pace overshoots the budget; green when safe.
+  const overPace = budget.projectedPaise > budgetPaise;
+
+  // Income above the user's monthly target renders as a gain.
+  const incomeGainPaise =
+    incomeTargetPaise !== null && incomePaise > incomeTargetPaise
+      ? incomePaise - incomeTargetPaise
+      : null;
 
   return (
     <div className="space-y-4">
@@ -163,9 +173,30 @@ export default async function DashboardPage() {
       )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatTile hero label="Spent this month" value={formatPaise(spendPaise)} />
-        <StatTile label="Income this month" value={formatPaise(incomePaise)} />
-        <StatTile label={paceLabel} value={formatPaise(paceValue)} />
+        <StatTile
+          hero
+          label="Spent this month"
+          value={formatPaise(spendPaise)}
+          hint={`${daysElapsed}/${totalDays}`}
+        />
+        {!hideIncome && (
+          <StatTile
+            label="Income this month"
+            value={formatPaise(incomePaise)}
+            tone={incomeGainPaise !== null ? "positive" : undefined}
+            extra={
+              incomeGainPaise !== null
+                ? `(+${formatPaise(incomeGainPaise)})`
+                : undefined
+            }
+          />
+        )}
+        <StatTile
+          label="On pace for"
+          value={formatPaise(budget.projectedPaise)}
+          tone={overPace ? "critical" : "positive"}
+          trendUp={overPace}
+        />
       </section>
 
       <CategoryPie
@@ -174,9 +205,9 @@ export default async function DashboardPage() {
         totalLabel={formatPaise(spendPaise)}
       />
 
-      <MonthlyTracker data={series} />
-
       <RecentExpenses expenses={recentRows} />
+
+      <MonthlyTracker data={series} showIncome={!hideIncome} />
     </div>
   );
 }

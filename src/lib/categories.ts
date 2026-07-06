@@ -4,7 +4,8 @@ export const CATEGORIES = [
   { key: "rent", label: "Rent", color: "#eda100" },
   { key: "bills", label: "Bills", color: "#008300" },
   { key: "subscriptions", label: "Subscriptions", color: "#4a3aa7" },
-  { key: "miscellaneous", label: "Miscellaneous", color: "#e34948" },
+  // DB enum key stays "miscellaneous"; display name is "Other".
+  { key: "miscellaneous", label: "Other", color: "#e34948" },
 ] as const;
 
 export type ExpenseCategory = (typeof CATEGORIES)[number]["key"];
