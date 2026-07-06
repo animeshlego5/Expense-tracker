@@ -64,3 +64,14 @@ No external services required.
   ```
 
 - `.env.example` documents every variable and when it's needed. To test against a real Neon DB locally, set `DATABASE_URL` (pooled) and `DIRECT_DATABASE_URL` (direct) in `.env.local` and re-run `bun run db:push`.
+
+### PGlite caveats (local dev only)
+
+- **Single process.** Only one process can hold `./.pglite` at a time — stop `bun dev` before running `bun run db:push` or `scripts/seed.ts`.
+- **Hard kills can corrupt it.** If the dev server is force-killed, PGlite may fail on next start with `RuntimeError: Aborted()`. The data is dev-only — reset with:
+
+  ```sh
+  rm -rf .pglite && bun run db:push
+  ```
+
+- **Run scripts under Node, not Bun.** PGlite's WASM aborts under Bun on Windows; use `bunx tsx scripts/seed.ts <email>` (tsx runs on Node). The dev server is unaffected (Next runs on Node).

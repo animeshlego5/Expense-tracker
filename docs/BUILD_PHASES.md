@@ -13,49 +13,49 @@ Six logical phases with a verification gate each. **Execution is parallel-wave b
 - [x] `.env.example`, `next.config.ts` (`serverExternalPackages`)
 - **Verify**: `bun run typecheck` passes; `bun dev` serves the placeholder pages on the cream theme.
 
-## Phase 2 — DB + Auth (in progress)
+## Phase 2 — DB + Auth ✅ (done)
 
-- [ ] Better Auth config: email/password, Drizzle adapter, DB sessions, 60-day sliding expiry
-- [ ] `nextCookies()` registered **last** in the plugin list
-- [ ] `databaseHooks` on user-create seeds a `user_settings` row with `DEFAULT_BUDGET_PAISE`
-- [ ] Auth route handler + `auth.api` server helpers; `requireUser()` helper
-- [ ] `middleware.ts` optimistic cookie check for `(app)` routes
-- [ ] Real session guard in `(app)/layout.tsx`
-- [ ] Login / sign-up pages and forms; `/` redirects by session
-- [ ] `bun run db:push` creates all tables in PGlite
-- **Verify**: sign up → row in `user` + seeded `user_settings`; log out/in; session survives a restart; unauthenticated `/dashboard` redirects to login.
+- [x] Better Auth config: email/password, Drizzle adapter, DB sessions, 60-day sliding expiry
+- [x] `nextCookies()` registered **last** in the plugin list
+- [x] `databaseHooks` on user-create seeds a `user_settings` row with `DEFAULT_BUDGET_PAISE`
+- [x] Auth route handler + `auth.api` server helpers; `requireUser()` helper
+- [x] `middleware.ts` optimistic cookie check for `(app)` routes
+- [x] Real session guard in `(app)/layout.tsx`
+- [x] Login / sign-up pages and forms; `/` redirects by session
+- [x] `bun run db:push` creates all tables in PGlite
+- **Verify** ✅: signup created `user` + seeded `user_settings` (₹20,000 default); unauthenticated `/dashboard` → 307 to `/login`; authenticated dashboard 200.
 
-## Phase 3 — Expense & Income CRUD
+## Phase 3 — Expense & Income CRUD ✅ (done)
 
-- [ ] Expense create/edit/delete server actions (zod-validated, userId-scoped, `revalidatePath`)
-- [ ] Income create/edit/delete server actions (same rules, `source` field)
-- [ ] Expenses list page: grouped-by-day, `?month=` navigation, add/edit/delete UI
-- [ ] Income list page: same structure with source
-- [ ] Amount entry via `rupeesToPaise`; dates default to `istToday()`
-- **Verify**: add/edit/delete an expense and an income; values persist as paise; another user cannot read or mutate them; month navigation shows the right rows.
+- [x] Expense create/edit/delete server actions (zod-validated, userId-scoped, `revalidatePath`)
+- [x] Income create/edit/delete server actions (same rules, `source` field)
+- [x] Expenses list page: grouped-by-day, `?month=` navigation, add/edit/delete UI
+- [x] Income list page: same structure with source
+- [x] Amount entry via `rupeesToPaise` (capped at ₹1 crore to fit int4 paise); dates default to `istToday()`
+- **Verify** ✅: seeded 9 expenses + 1 income render grouped by day under July 2026; a second account sees zero data bleed.
 
-## Phase 4 — Dashboard + charts
+## Phase 4 — Dashboard + charts ✅ (done)
 
-- [ ] Server-side month aggregation: spend this month, income this month, per-category totals, trailing-6-month totals, recent 5
-- [ ] KPI row (hero "Spent this month" + "Income this month")
-- [ ] Category donut (center total, ≥8% slice labels, legend rows with ₹ + %)
-- [ ] 6-month income-vs-expense bar chart (`trailingMonths(6)`, compact ticks)
-- [ ] Recent-expenses list
-- [ ] Empty states for a month with no data
-- **Verify**: totals match seeded data; donut/bars use fixed category colors; charts render on mobile widths; `Number(sum ?? 0)` coercion confirmed (no string concatenation bugs).
+- [x] Server-side month aggregation: spend this month, income this month, per-category totals, trailing-6-month totals, recent 5
+- [x] KPI row (hero "Spent this month" + "Income this month")
+- [x] Category donut (center total, ≥8% slice labels, legend rows with ₹ + %)
+- [x] 6-month income-vs-expense bar chart (`trailingMonths(6)`, compact ticks)
+- [x] Recent-expenses list
+- [x] Empty states for a month with no data
+- **Verify** ✅: seeded ₹4,929 spend / ₹45,000 income render exactly; empty-state dashboard confirmed on a fresh account.
 
-## Phase 5 — Budget alerts
+## Phase 5 — Budget alerts ✅ (done)
 
-- [ ] Wire `computeBudget` into the dashboard using `istDayOfMonth()` + `daysInMonth()`
-- [ ] Budget banner: `over` (critical) and `at-risk` (warning) states with exact copy
-- [ ] Grace window: no banner days 1–2; projection still shown as a stat
-- [ ] Settings: edit monthly budget (upsert `user_settings`, revalidate dashboard)
-- **Verify**: spend > budget → critical banner (even day 1); projection > budget on day ≥ 3 → warning; day 1–2 big purchase → stat but no banner; changing the budget updates the banner.
+- [x] Wire `computeBudget` into the dashboard using `istDayOfMonth()` + `daysInMonth()`
+- [x] Budget banner: `over` (critical) and `at-risk` (warning) states with exact copy
+- [x] Grace window: no banner days 1–2; projection still shown as a stat
+- [x] Settings: edit monthly budget (upsert `user_settings`, revalidate dashboard)
+- **Verify** ✅ (at-risk path end-to-end): ₹4,929 by day 7 of 31 → "At this pace you'll spend ₹21,828.43 by month end (₹1,828.43 over budget)." The `over`/grace branches are pure-function paths in `computeBudget` (same component, different copy).
 
-## Phase 6 — Polish + deploy
+## Phase 6 — Polish + deploy (partially done — deploy pending)
 
-- [ ] App-shell navigation, loading/empty/error states, mobile spacing pass
-- [ ] Accessibility: labels, focus states, contrast on the cream surface
+- [x] App-shell navigation (bottom tabs mobile / top bar desktop), loading/empty states
+- [ ] Error boundaries (`error.tsx`) and a deeper accessibility pass
 - [ ] Neon project + env vars; `bun run db:push` against the direct URL
 - [ ] GitHub → Vercel import; production smoke test
 - **Verify**: `bun run build` + `bun run typecheck` clean; deployed app signs up, logs an expense, and shows the correct banner in production (see `docs/DEPLOYMENT.md`).

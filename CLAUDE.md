@@ -43,6 +43,7 @@ Mobile-first, multi-user expense tracker. Users sign up / log in (email + passwo
 - Next 16: `headers()`, `cookies()`, `params`, and `searchParams` are **async** — `await` them.
 - Recharts is **client-only** (`"use client"`) and needs a sized parent (e.g. `ResponsiveContainer` inside a fixed-height box).
 - `occurred_on` is a Postgres `date` read as a `'YYYY-MM-DD'` string (`mode: "string"`) — it is the IST calendar day, not a timestamp.
+- PGlite (dev DB) is **single-process** and can corrupt on hard kills (`RuntimeError: Aborted()` on next start) — reset with `rm -rf .pglite && bun run db:push`. On Windows, run standalone DB scripts under Node (`bunx tsx scripts/seed.ts`), never `bun` — PGlite's WASM aborts under Bun. See `docs/DEPLOYMENT.md`.
 
 ## Codebase pointers
 
