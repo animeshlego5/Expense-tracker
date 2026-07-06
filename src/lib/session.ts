@@ -2,19 +2,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * Server-only guard: returns the current session or redirects to /login.
+ * Use in server components / server actions that require an authenticated user.
+ */
+export async function requireUser() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     redirect("/login");
   }
-
-  return (
-    <main className="mx-auto w-full max-w-md px-4 pb-24 pt-4 lg:max-w-4xl">
-      {children}
-    </main>
-  );
+  return session;
 }

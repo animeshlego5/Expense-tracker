@@ -1,7 +1,8 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 
-// Placeholder: the auth foundation replaces this with a session-aware
-// redirect (session ? /dashboard : /login).
-export default function Home() {
-  redirect("/login");
+export default async function Home() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  redirect(session ? "/dashboard" : "/login");
 }
