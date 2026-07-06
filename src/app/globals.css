@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  /* Cream surface system */
+  --color-cream: #faf6ec;
+  --color-surface: #fffcf5;
+  --color-ink: #1f1d1a;
+  --color-ink-soft: #52514e;
+  --color-hairline: #e7e1d3;
+
+  /* Fixed category palette (CVD-validated on the cream surface) */
+  --color-cat-food: #2a78d6;
+  --color-cat-travel: #1baf7a;
+  --color-cat-rent: #eda100;
+  --color-cat-bills: #008300;
+  --color-cat-subscriptions: #4a3aa7;
+  --color-cat-miscellaneous: #e34948;
+
+  /* Status colors — reserved for alerts, never reused by charts */
+  --color-warning: #fab219;
+  --color-critical: #d03b3b;
+}
