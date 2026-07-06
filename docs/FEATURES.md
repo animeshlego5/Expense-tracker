@@ -20,9 +20,10 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
    - **"On pace for"** — the projected month-end spend, always shown: **red with an up-arrow icon** when the projection exceeds the budget, **green** when on track.
 3. **Category donut** — expense distribution by category for the month.
    - Center of the donut shows the **total spent** for the month.
-   - Header has an **icon-only toggle button** switching slice labels between **percentages** (default) and **category names**.
-   - Slice labels appear only on slices that are **≥ 8%** of the total (smaller slices stay unlabeled to avoid clutter).
-   - Legend: one row per category present, each with the category color swatch, label, **₹ amount and its %** of the month's spend.
+   - Header has an **icon-only toggle button** switching slice labels between **percentages** (default) and **short category codes** (`FOOD`, `TRA`, `RENT`, `BILLS`, `SUBS`, `OTHER` — the `short` field in `src/lib/categories.ts`).
+   - Slice labels are ink text with a **white halo** (`paintOrder: stroke`) so they stay readable on any slice color; drawn only on slices **≥ 8%** of the total.
+   - **Overspend highlighting**: a category whose month spend exceeds its per-category cap gets a **critical-red border** on its slice, a `+₹X over` chip in the legend, and the overage in its tooltip.
+   - Legend: one row per category present — color swatch + label (**links to `/expenses?category=<key>`**), ₹ amount, and % of the month's spend.
    - Slice/legend colors are the fixed category palette, never reassigned. "Other" is the display label for the `miscellaneous` enum key.
    - Empty month → a friendly empty state instead of an empty chart.
 4. **Recent expenses** — the 5 most recent expenses (by `occurred_on`, then recency), each showing category color/label, note, day, and amount. Links through to the expenses page.
@@ -32,6 +33,7 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
 
 - **List** for a month, grouped by day (newest day first, newest entry first within a day). Day headers use `dayLabel` ("Mon, 6 Jul"); each group can show a per-day subtotal.
 - **Month navigation** via `?month=YYYY-MM` (defaults to the current IST month). Prev/next controls step with `addMonths`; the heading uses `monthLabel` ("July 2026").
+- **Category filter** via `?category=<key>` — a horizontal chip row ("All" + the six categories with color dots) filters the list and the month total to one category. The filter survives month navigation and edit/cancel round-trips; the dashboard pie legend links here pre-filtered.
 - **Add** — amount (₹ input parsed by `rupeesToPaise`), category (one of six), optional note, date (`occurred_on`, defaults to `istToday()`). Server action zod-validates (amount > 0, category in enum), scopes to the session user, inserts, `revalidatePath`.
 - **Edit** — same form pre-filled; updates scoped `AND user_id = ?`.
 - **Delete** — removes the entry, scoped `AND user_id = ?`, with confirmation.
@@ -43,6 +45,7 @@ Same structure as expenses, but each entry has a free-text **source** (e.g. "Sal
 ## Settings (`/settings`)
 
 - **Edit monthly budget** — rupee input parsed to paise via `rupeesToPaise`, validated (> 0), upserted into `user_settings` scoped to the session user, then `revalidatePath('/dashboard')` so the banner reflects the new budget immediately.
+- **Category budgets** — one form with a ₹ input per category (`category_budgets` table, composite PK user+category). Empty = no cap (row deleted). A category over its cap is highlighted on the dashboard donut (red slice border + legend chip) to show where overspending happens.
 - **Student mode toggle** — for users on variable pocket money: sets `user_settings.hide_income`. When ON, income disappears everywhere: the dashboard income tile, the income series in the 6-month chart, the Income tab in the navbar, the `/income` page (redirects), and the income-target form below. Only budget tracking remains.
 - **Expected monthly income** (hidden in student mode) — sets `user_settings.monthly_income_target_paise`; empty input clears it. Actual income above this shows as a green gain on the dashboard.
 - **Sign out** — ends the session and redirects to `/login`.

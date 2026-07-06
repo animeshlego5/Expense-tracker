@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
   Cell,
@@ -14,8 +15,11 @@ import { formatPaise } from "@/lib/currency";
 interface Slice {
   key: string;
   label: string;
+  short: string;
   value: number; // paise
   color: string;
+  /** Paise over this category's monthly cap; 0 = within cap or no cap set. */
+  overByPaise: number;
 }
 
 type LabelMode = "percent" | "name";
@@ -81,7 +85,7 @@ export function CategoryPie({
                   endAngle={-270}
                   labelLine={false}
                   label={(props: PieLabelRenderProps) =>
-                    renderSliceLabel(props, labelMode)
+                    renderSliceLabel(props, labelMode, data)
                   }
                   isAnimationActive={false}
                 >
@@ -89,8 +93,9 @@ export function CategoryPie({
                     <Cell
                       key={slice.key}
                       fill={slice.color}
-                      stroke="#fffcf5"
-                      strokeWidth={2}
+                      // Overspent categories get a critical-red border.
+                      stroke={slice.overByPaise > 0 ? "#d03b3b" : "#fffcf5"}
+                      strokeWidth={slice.overByPaise > 0 ? 3 : 2}
                     />
                   ))}
                 </Pie>
@@ -98,12 +103,18 @@ export function CategoryPie({
                   content={({ active, payload }) => {
                     if (!active || !payload || payload.length === 0) return null;
                     const item = payload[0];
+                    const slice = item.payload as Slice | undefined;
                     return (
                       <div className="rounded-lg border border-hairline bg-surface px-3 py-2 text-sm shadow-sm">
                         <span className="font-medium text-ink">{item.name}</span>
                         <span className="ml-2 tabular-nums text-ink">
                           {formatPaise(Number(item.value))}
                         </span>
+                        {slice && slice.overByPaise > 0 && (
+                          <p className="mt-0.5 text-xs font-medium text-critical">
+                            {formatPaise(slice.overByPaise)} over its budget
+                          </p>
+                        )}
                       </div>
                     );
                   }}
@@ -127,12 +138,23 @@ export function CategoryPie({
                   : 0;
               return (
                 <li key={slice.key} className="flex items-center gap-2 text-sm">
-                  <span
-                    aria-hidden="true"
-                    className="h-2.5 w-2.5 rounded"
-                    style={{ backgroundColor: slice.color }}
-                  />
-                  <span className="text-ink">{slice.label}</span>
+                  <Link
+                    href={`/expenses?category=${slice.key}`}
+                    title={`View ${slice.label} expenses`}
+                    className="flex items-center gap-2 underline-offset-2 hover:underline"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 rounded"
+                      style={{ backgroundColor: slice.color }}
+                    />
+                    <span className="text-ink">{slice.label}</span>
+                  </Link>
+                  {slice.overByPaise > 0 && (
+                    <span className="rounded bg-critical/10 px-1.5 py-0.5 text-xs font-medium text-critical">
+                      +{formatPaise(slice.overByPaise)} over
+                    </span>
+                  )}
                   <span className="flex-1" />
                   <span className="tabular-nums text-ink">
                     {formatPaise(slice.value)}
@@ -150,11 +172,13 @@ export function CategoryPie({
   );
 }
 
-// Slice label drawn only on slices >= 8% of the total, in ink (not slice color).
-// Shows either the percentage or the category name, per the header toggle.
+// Slice label drawn only on slices >= 8% of the total, in ink with a white
+// halo (paint-order stroke) so it stays readable on any slice color.
+// Shows either the percentage or the short category name, per the toggle.
 function renderSliceLabel(
   props: PieLabelRenderProps,
-  mode: LabelMode
+  mode: LabelMode,
+  data: Slice[]
 ): ReactNode {
   const percent = typeof props.percent === "number" ? props.percent : 0;
   if (percent < 0.08) return null;
@@ -168,18 +192,25 @@ function renderSliceLabel(
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
+  const index = Number(props.index ?? -1);
   const text =
-    mode === "percent" ? `${Math.round(percent * 100)}%` : String(props.name ?? "");
+    mode === "percent"
+      ? `${Math.round(percent * 100)}%`
+      : (data[index]?.short ?? String(props.name ?? ""));
 
   return (
     <text
       x={x}
       y={y}
       fill="#1f1d1a"
+      stroke="#ffffff"
+      strokeWidth={3}
+      strokeLinejoin="round"
+      paintOrder="stroke"
       textAnchor="middle"
       dominantBaseline="central"
-      fontSize={mode === "percent" ? 12 : 11}
-      fontWeight={600}
+      fontSize={mode === "percent" ? 12 : 10.5}
+      fontWeight={700}
     >
       {text}
     </text>

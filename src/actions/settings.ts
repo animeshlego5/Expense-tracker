@@ -1,8 +1,14 @@
 "use server";
 
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { userSettings } from "@/db/schema";
+import { categoryBudgets, userSettings } from "@/db/schema";
+import {
+  CATEGORY_KEYS,
+  categoryLabel,
+  type ExpenseCategory,
+} from "@/lib/categories";
 import { rupeesToPaise } from "@/lib/currency";
 import { requireUser } from "@/lib/session";
 
@@ -61,6 +67,58 @@ export async function updateIncomeTarget(
       target: userSettings.userId,
       set: { monthlyIncomeTargetPaise: targetPaise, updatedAt: new Date() },
     });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+// Per-category monthly caps. One form submits all six: empty input = no cap
+// (row removed), a value upserts that category's cap.
+export async function updateCategoryBudgets(
+  _prev: FormState | null,
+  formData: FormData
+): Promise<FormState> {
+  const session = await requireUser();
+  const userId = session.user.id;
+
+  const upserts: { category: ExpenseCategory; paise: number }[] = [];
+  const removals: ExpenseCategory[] = [];
+  for (const key of CATEGORY_KEYS) {
+    const raw = String(formData.get(key) ?? "").trim();
+    if (raw.length === 0) {
+      removals.push(key);
+      continue;
+    }
+    const paise = rupeesToPaise(raw);
+    if (paise === null || paise <= 0) {
+      return { error: `Enter a valid amount for ${categoryLabel(key)}.` };
+    }
+    if (paise > MAX_BUDGET_PAISE) {
+      return { error: `The ${categoryLabel(key)} cap is too large.` };
+    }
+    upserts.push({ category: key, paise });
+  }
+
+  for (const u of upserts) {
+    await db
+      .insert(categoryBudgets)
+      .values({ userId, category: u.category, monthlyBudgetPaise: u.paise })
+      .onConflictDoUpdate({
+        target: [categoryBudgets.userId, categoryBudgets.category],
+        set: { monthlyBudgetPaise: u.paise, updatedAt: new Date() },
+      });
+  }
+  if (removals.length > 0) {
+    await db
+      .delete(categoryBudgets)
+      .where(
+        and(
+          eq(categoryBudgets.userId, userId),
+          inArray(categoryBudgets.category, removals)
+        )
+      );
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/settings");

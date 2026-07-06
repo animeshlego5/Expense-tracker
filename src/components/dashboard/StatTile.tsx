@@ -28,7 +28,7 @@ export function StatTile({
     <div className="rounded-2xl border border-hairline bg-surface p-4">
       <p className="flex items-baseline justify-between text-sm text-ink-soft">
         <span>{label}</span>
-        {hint && <span className="tabular-nums text-xs">{hint}</span>}
+        {hint && <span className="text-xs font-bold tabular-nums">{hint}</span>}
       </p>
       <p
         className={`mt-1 font-semibold ${

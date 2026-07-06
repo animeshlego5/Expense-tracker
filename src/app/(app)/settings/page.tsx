@@ -1,24 +1,34 @@
 import { eq } from "drizzle-orm";
 import { BudgetForm } from "@/components/forms/BudgetForm";
+import { CategoryBudgetsForm } from "@/components/forms/CategoryBudgetsForm";
 import { IncomeTargetForm } from "@/components/forms/IncomeTargetForm";
 import { StudentToggle } from "@/components/forms/StudentToggle";
 import { SignOutButton } from "@/components/nav/SignOutButton";
 import { db } from "@/db";
-import { userSettings } from "@/db/schema";
+import { categoryBudgets, userSettings } from "@/db/schema";
 import { DEFAULT_BUDGET_PAISE } from "@/lib/budget";
+import type { ExpenseCategory } from "@/lib/categories";
 import { requireUser } from "@/lib/session";
 
 export default async function SettingsPage() {
   const session = await requireUser();
   const userId = session.user.id;
 
-  const [settings] = await db
-    .select()
-    .from(userSettings)
-    .where(eq(userSettings.userId, userId));
+  const [[settings], categoryBudgetRows] = await Promise.all([
+    db.select().from(userSettings).where(eq(userSettings.userId, userId)),
+    db
+      .select()
+      .from(categoryBudgets)
+      .where(eq(categoryBudgets.userId, userId)),
+  ]);
   const budgetPaise = settings?.monthlyBudgetPaise ?? DEFAULT_BUDGET_PAISE;
   const incomeTargetPaise = settings?.monthlyIncomeTargetPaise ?? null;
   const hideIncome = settings?.hideIncome ?? false;
+
+  const currentCaps: Partial<Record<ExpenseCategory, number>> = {};
+  for (const row of categoryBudgetRows) {
+    currentCaps[row.category] = row.monthlyBudgetPaise;
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -30,6 +40,8 @@ export default async function SettingsPage() {
       </section>
 
       <BudgetForm currentPaise={budgetPaise} />
+
+      <CategoryBudgetsForm current={currentCaps} />
 
       <StudentToggle initial={hideIncome} />
 

@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, lt, sql, sum } from "drizzle-orm";
 import { db } from "@/db";
-import { expenses, incomes, userSettings } from "@/db/schema";
+import { categoryBudgets, expenses, incomes, userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/session";
 import { formatPaise } from "@/lib/currency";
 import { CATEGORIES } from "@/lib/categories";
@@ -49,6 +49,7 @@ export default async function DashboardPage() {
     recentRows,
     expenseSeriesRows,
     incomeSeriesRows,
+    categoryBudgetRows,
   ] = await Promise.all([
     db.select({ total: sum(expenses.amountPaise) }).from(expenses).where(monthExpenses),
     db
@@ -105,6 +106,10 @@ export default async function DashboardPage() {
         )
       )
       .groupBy(incomeMonth),
+    db
+      .select()
+      .from(categoryBudgets)
+      .where(eq(categoryBudgets.userId, userId)),
   ]);
 
   const spendPaise = Number(expenseTotalRows[0]?.total ?? 0);
@@ -115,16 +120,26 @@ export default async function DashboardPage() {
   const hideIncome = settings?.hideIncome ?? false;
 
   // Category slices in fixed CATEGORIES order, only those with spend.
+  // A slice is "overspent" when its month total exceeds its per-category cap.
   const categoryTotals = new Map<string, number>();
   for (const row of categoryRows) {
     categoryTotals.set(row.category, Number(row.total ?? 0));
   }
-  const pieData = CATEGORIES.map((c) => ({
-    key: c.key,
-    label: c.label,
-    value: categoryTotals.get(c.key) ?? 0,
-    color: c.color,
-  })).filter((d) => d.value > 0);
+  const capByCategory = new Map(
+    categoryBudgetRows.map((row) => [row.category, row.monthlyBudgetPaise])
+  );
+  const pieData = CATEGORIES.map((c) => {
+    const value = categoryTotals.get(c.key) ?? 0;
+    const cap = capByCategory.get(c.key);
+    return {
+      key: c.key,
+      label: c.label,
+      short: c.short,
+      value,
+      color: c.color,
+      overByPaise: cap !== undefined && value > cap ? value - cap : 0,
+    };
+  }).filter((d) => d.value > 0);
 
   // Assemble the 6-month series; missing months = 0.
   const expenseByMonth = new Map<string, number>();

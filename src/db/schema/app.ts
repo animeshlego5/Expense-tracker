@@ -5,6 +5,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -67,6 +68,23 @@ export const userSettings = pgTable("user_settings", {
     .defaultNow(),
 });
 
+// Optional monthly spending cap per category. Absence of a row = no cap.
+export const categoryBudgets = pgTable(
+  "category_budgets",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    category: expenseCategory("category").notNull(),
+    monthlyBudgetPaise: integer("monthly_budget_paise").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.category] })]
+);
+
 export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof incomes.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
+export type CategoryBudget = typeof categoryBudgets.$inferSelect;

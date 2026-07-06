@@ -1,11 +1,11 @@
 export const CATEGORIES = [
-  { key: "food", label: "Food", color: "#2a78d6" },
-  { key: "travel", label: "Travel", color: "#1baf7a" },
-  { key: "rent", label: "Rent", color: "#eda100" },
-  { key: "bills", label: "Bills", color: "#008300" },
-  { key: "subscriptions", label: "Subscriptions", color: "#4a3aa7" },
+  { key: "food", label: "Food", short: "FOOD", color: "#2a78d6" },
+  { key: "travel", label: "Travel", short: "TRA", color: "#1baf7a" },
+  { key: "rent", label: "Rent", short: "RENT", color: "#eda100" },
+  { key: "bills", label: "Bills", short: "BILLS", color: "#008300" },
+  { key: "subscriptions", label: "Subscriptions", short: "SUBS", color: "#4a3aa7" },
   // DB enum key stays "miscellaneous"; display name is "Other".
-  { key: "miscellaneous", label: "Other", color: "#e34948" },
+  { key: "miscellaneous", label: "Other", short: "OTHER", color: "#e34948" },
 ] as const;
 
 export type ExpenseCategory = (typeof CATEGORIES)[number]["key"];

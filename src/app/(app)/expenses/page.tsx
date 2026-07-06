@@ -4,7 +4,13 @@ import { deleteExpense } from "@/actions/expenses";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
 import { db } from "@/db";
 import { expenses } from "@/db/schema";
-import { categoryColor, categoryLabel } from "@/lib/categories";
+import {
+  CATEGORIES,
+  CATEGORY_KEYS,
+  categoryColor,
+  categoryLabel,
+  type ExpenseCategory,
+} from "@/lib/categories";
 import { formatPaise } from "@/lib/currency";
 import {
   addMonths,
@@ -21,13 +27,21 @@ const MONTH_RE = /^\d{4}-\d{2}$/;
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; edit?: string }>;
+  searchParams: Promise<{ month?: string; edit?: string; category?: string }>;
 }) {
   const session = await requireUser();
   const userId = session.user.id;
   const sp = await searchParams;
   const month = sp.month && MONTH_RE.test(sp.month) ? sp.month : istCurrentMonth();
   const { start, end } = monthRange(month);
+
+  // Optional category filter, e.g. ?category=travel.
+  const category =
+    sp.category && (CATEGORY_KEYS as readonly string[]).includes(sp.category)
+      ? (sp.category as ExpenseCategory)
+      : undefined;
+  const withCategory = (m: string) =>
+    `/expenses?month=${m}${category ? `&category=${category}` : ""}`;
 
   const rows = await db
     .select()
@@ -36,7 +50,8 @@ export default async function ExpensesPage({
       and(
         eq(expenses.userId, userId),
         gte(expenses.occurredOn, start),
-        lt(expenses.occurredOn, end)
+        lt(expenses.occurredOn, end),
+        category ? eq(expenses.category, category) : undefined
       )
     )
     .orderBy(desc(expenses.occurredOn), desc(expenses.createdAt));
@@ -64,7 +79,7 @@ export default async function ExpensesPage({
         </div>
         <nav className="flex items-center gap-1">
           <Link
-            href={`/expenses?month=${addMonths(month, -1)}`}
+            href={withCategory(addMonths(month, -1))}
             aria-label="Previous month"
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-hairline text-ink"
           >
@@ -79,7 +94,7 @@ export default async function ExpensesPage({
             </span>
           ) : (
             <Link
-              href={`/expenses?month=${addMonths(month, 1)}`}
+              href={withCategory(addMonths(month, 1))}
               aria-label="Next month"
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-hairline text-ink"
             >
@@ -89,11 +104,51 @@ export default async function ExpensesPage({
         </nav>
       </header>
 
+      {/* Category filter chips */}
+      <nav
+        aria-label="Filter by category"
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
+      >
+        <Link
+          href={`/expenses?month=${month}`}
+          aria-current={!category ? "true" : undefined}
+          className={`flex h-9 shrink-0 items-center rounded-full border px-3.5 text-sm transition-colors ${
+            !category
+              ? "border-ink bg-ink font-medium text-cream"
+              : "border-hairline bg-surface text-ink-soft hover:text-ink"
+          }`}
+        >
+          All
+        </Link>
+        {CATEGORIES.map((c) => {
+          const active = category === c.key;
+          return (
+            <Link
+              key={c.key}
+              href={`/expenses?month=${month}&category=${c.key}`}
+              aria-current={active ? "true" : undefined}
+              className={`flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm transition-colors ${
+                active
+                  ? "border-ink bg-ink font-medium text-cream"
+                  : "border-hairline bg-surface text-ink-soft hover:text-ink"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: c.color }}
+              />
+              {c.label}
+            </Link>
+          );
+        })}
+      </nav>
+
       {editRow ? (
         <ExpenseForm
           key={editRow.id}
           today={today}
-          cancelHref={`/expenses?month=${month}`}
+          cancelHref={withCategory(month)}
           initial={{
             id: editRow.id,
             amountPaise: editRow.amountPaise,
@@ -107,7 +162,10 @@ export default async function ExpensesPage({
       )}
 
       {groups.length === 0 ? (
-        <p className="text-ink-soft">No expenses in {monthLabel(month)}.</p>
+        <p className="text-ink-soft">
+          No {category ? `${categoryLabel(category)} ` : ""}expenses in{" "}
+          {monthLabel(month)}.
+        </p>
       ) : (
         <div className="flex flex-col gap-5">
           {groups.map((g) => {
@@ -143,7 +201,7 @@ export default async function ExpensesPage({
                         {formatPaise(r.amountPaise)}
                       </span>
                       <Link
-                        href={`/expenses?month=${month}&edit=${r.id}`}
+                        href={`${withCategory(month)}&edit=${r.id}`}
                         className="shrink-0 text-sm text-ink-soft underline"
                       >
                         Edit

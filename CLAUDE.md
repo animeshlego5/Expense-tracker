@@ -1,6 +1,6 @@
 # Expense Tracker — Project Memory
 
-Mobile-first, multi-user expense tracker. Users sign up / log in (email + password, 60-day sliding sessions) and log daily expenses in 6 fixed categories (Food, Travel, Rent, Bills, Subscriptions, Other) plus income entries. One dashboard shows spend this month (with a day-progress hint like `7/31`), income this month (green + gain bracket when above the user's income target), a red/green "On pace for" projection, a category donut (labels toggle % ↔ names), recent expenses, and a 6-month income-vs-expense bar chart at the bottom, plus a budget banner. Budget defaults to ₹20,000/month (per-user configurable). **Student mode** (`user_settings.hide_income`) hides income tracking everywhere. Typeface: Hanken Grotesk via `next/font`. Money is stored as integer **paise**; all dates are **IST** (Asia/Kolkata).
+Mobile-first, multi-user expense tracker. Users sign up / log in (email + password, 60-day sliding sessions) and log daily expenses in 6 fixed categories (Food, Travel, Rent, Bills, Subscriptions, Other) plus income entries. One dashboard shows spend this month (with a day-progress hint like `7/31`), income this month (green + gain bracket when above the user's income target), a red/green "On pace for" projection, a category donut (labels toggle % ↔ short codes like TRA/SUBS, white halo; overspent categories get a red slice border via per-category caps in `category_budgets`; legend links to `/expenses?category=`), recent expenses, and a 6-month income-vs-expense bar chart at the bottom, plus a budget banner. The expenses page filters by month and category chips. Budget defaults to ₹20,000/month (per-user configurable). **Student mode** (`user_settings.hide_income`) hides income tracking everywhere. Typeface: Hanken Grotesk via `next/font`. Money is stored as integer **paise**; all dates are **IST** (Asia/Kolkata).
 
 ## Commands
 
@@ -48,7 +48,7 @@ Mobile-first, multi-user expense tracker. Users sign up / log in (email + passwo
 ## Codebase pointers
 
 - `src/db/index.ts` — dual-driver DB (`DATABASE_URL` → Neon, else PGlite); HMR-cached.
-- `src/db/schema/app.ts` — `expenses`, `incomes`, `user_settings` tables + `expense_category` enum.
+- `src/db/schema/app.ts` — `expenses`, `incomes`, `user_settings`, `category_budgets` (per-category caps) + `expense_category` enum.
 - `src/db/schema/auth.ts` — Better Auth tables: `user`, `session`, `account`, `verification`.
 - `src/db/schema/index.ts` — re-exports both schema files.
 - `src/lib/currency.ts` — paise ↔ rupee formatting/parsing.
