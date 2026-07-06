@@ -144,7 +144,8 @@ export default async function ExpensesPage({
         })}
       </nav>
 
-      {editRow ? (
+      {/* Adding lives on /add; only the edit form renders here, in context. */}
+      {editRow && (
         <ExpenseForm
           key={editRow.id}
           today={today}
@@ -157,8 +158,6 @@ export default async function ExpensesPage({
             occurredOn: editRow.occurredOn,
           }}
         />
-      ) : (
-        <ExpenseForm key="add" today={today} />
       )}
 
       {groups.length === 0 ? (

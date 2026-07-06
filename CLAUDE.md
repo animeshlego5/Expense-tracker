@@ -56,7 +56,7 @@ Mobile-first, multi-user expense tracker. Users sign up / log in (email + passwo
 - `src/lib/dates.ts` — all IST calendar math.
 - `src/lib/budget.ts` — `computeBudget` run-rate projection + `DEFAULT_BUDGET_PAISE`.
 - `src/app/globals.css` — Tailwind v4 `@theme` design tokens.
-- `src/app/(app)/` — dashboard, expenses, income, settings pages (behind auth).
+- `src/app/(app)/` — dashboard, expenses, add (expense entry), income, settings pages (behind auth).
 - `drizzle.config.ts` — `DIRECT_DATABASE_URL` → Neon DDL, else PGlite.
 - `.env.example` — documents every env var.
 

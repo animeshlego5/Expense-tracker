@@ -10,6 +10,7 @@ export function middleware(request: NextRequest) {
   const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/expenses") ||
+    pathname.startsWith("/add") ||
     pathname.startsWith("/income") ||
     pathname.startsWith("/settings");
 
@@ -31,6 +32,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/expenses/:path*",
+    "/add/:path*",
     "/income/:path*",
     "/settings/:path*",
     "/login",

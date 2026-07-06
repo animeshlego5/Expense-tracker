@@ -57,9 +57,19 @@ function GearIcon(props: IconProps) {
   );
 }
 
+function PlusIcon(props: IconProps) {
+  return (
+    <svg {...iconBase(props)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8 12h8" />
+    </svg>
+  );
+}
+
 const allItems = [
   { href: "/dashboard", label: "Dashboard", Icon: HouseIcon },
   { href: "/expenses", label: "Expenses", Icon: ReceiptIcon },
+  { href: "/add", label: "Add", Icon: PlusIcon },
   { href: "/income", label: "Income", Icon: BanknoteIcon },
   { href: "/settings", label: "Settings", Icon: GearIcon },
 ];
