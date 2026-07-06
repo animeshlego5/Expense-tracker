@@ -15,6 +15,8 @@ export type FormState = { error: string } | { ok: true };
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const MAX_AMOUNT_PAISE = 1_000_000_000; // ₹1 crore — stays within the int4 paise column
+
 const fieldsSchema = z.object({
   category: z.enum(CATEGORY_KEYS),
   note: z.string().trim().max(200, "Note must be 200 characters or fewer."),
@@ -37,6 +39,9 @@ function parseExpense(
   const amountPaise = rupeesToPaise(String(formData.get("amount") ?? ""));
   if (amountPaise === null || amountPaise <= 0) {
     return { error: "Enter an amount greater than ₹0." };
+  }
+  if (amountPaise > MAX_AMOUNT_PAISE) {
+    return { error: "Amount can't exceed ₹1,00,00,000." };
   }
   const parsed = fieldsSchema.safeParse({
     category: formData.get("category"),

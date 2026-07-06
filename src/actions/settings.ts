@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/session";
 export type FormState = { error: string } | { ok: true };
 
 const MIN_BUDGET_PAISE = 100_000; // ₹1,000
-const MAX_BUDGET_PAISE = 10_000_000_000; // ₹10,00,00,000
+const MAX_BUDGET_PAISE = 1_000_000_000; // ₹1 crore — stays within the int4 paise column
 
 export async function updateBudget(
   _prev: FormState | null,
