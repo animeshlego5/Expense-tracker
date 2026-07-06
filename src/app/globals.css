@@ -25,3 +25,22 @@
   /* Money-positive (shared with income green by convention) */
   --color-positive: #008300;
 }
+
+/* Live pulse on pie slices whose category is over its monthly cap.
+   Gated on prefers-reduced-motion; the legend's "+₹X over" chip is the
+   static fallback signal. */
+@keyframes overspend-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .overspend-pulse {
+    animation: overspend-pulse 1.2s ease-in-out infinite;
+  }
+}

@@ -93,9 +93,12 @@ export function CategoryPie({
                     <Cell
                       key={slice.key}
                       fill={slice.color}
-                      // Overspent categories get a critical-red border.
-                      stroke={slice.overByPaise > 0 ? "#d03b3b" : "#fffcf5"}
-                      strokeWidth={slice.overByPaise > 0 ? 3 : 2}
+                      stroke="#fffcf5"
+                      strokeWidth={2}
+                      // Overspent categories blink to draw the eye.
+                      className={
+                        slice.overByPaise > 0 ? "overspend-pulse" : undefined
+                      }
                     />
                   ))}
                 </Pie>

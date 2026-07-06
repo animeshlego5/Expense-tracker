@@ -22,7 +22,7 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
    - Center of the donut shows the **total spent** for the month.
    - Header has an **icon-only toggle button** switching slice labels between **percentages** (default) and **short category codes** (`FOOD`, `TRA`, `RENT`, `BILLS`, `SUBS`, `OTHER` — the `short` field in `src/lib/categories.ts`).
    - Slice labels are ink text with a **white halo** (`paintOrder: stroke`) so they stay readable on any slice color; drawn only on slices **≥ 8%** of the total.
-   - **Overspend highlighting**: a category whose month spend exceeds its per-category cap gets a **critical-red border** on its slice, a `+₹X over` chip in the legend, and the overage in its tooltip.
+   - **Overspend highlighting**: a category whose month spend exceeds its per-category cap gets a **live blinking pulse** on its slice (`overspend-pulse` keyframes, disabled under `prefers-reduced-motion`), a `+₹X over` chip in the legend, and the overage in its tooltip.
    - Legend: one row per category present — color swatch + label (**links to `/expenses?category=<key>`**), ₹ amount, and % of the month's spend.
    - Slice/legend colors are the fixed category palette, never reassigned. "Other" is the display label for the `miscellaneous` enum key.
    - Empty month → a friendly empty state instead of an empty chart.
