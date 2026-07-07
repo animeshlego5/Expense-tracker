@@ -18,7 +18,12 @@ Run DDL from your machine against the **direct** URL — never during the Vercel
 DIRECT_DATABASE_URL="<neon direct string>" bun run db:push
 ```
 
-`drizzle-kit push` reads `drizzle.config.ts`; with `DIRECT_DATABASE_URL` set it targets Neon and creates the `user`, `session`, `account`, `verification`, `expenses`, `incomes`, and `user_settings` tables (plus the `expense_category` enum and indexes). Re-run this whenever the schema changes. **Do not** put DDL in the Vercel build step.
+`drizzle-kit push` reads `drizzle.config.ts`; with `DIRECT_DATABASE_URL` set it targets Neon and creates the `user`, `session`, `account`, `verification`, `expenses`, `incomes`, `user_settings`, `category_budgets`, and `subscriptions` tables (plus the `expense_category` enum and indexes). Re-run this whenever the schema changes. **Do not** put DDL in the Vercel build step.
+
+**Migrate Neon on every schema change, before/after deploying.** Deploying ships code, not migrations — shipping code that queries a new table without migrating first yields a runtime `relation "<table>" does not exist` (Postgres `42P01`) 500 on Vercel. The fix creates the table live; **no redeploy needed** (Neon serves each query fresh). Two ways:
+
+- **Neon SQL Editor (simplest):** paste the `CREATE TABLE` DDL for the new table straight into the dashboard's SQL Editor. Get the DDL from `bunx drizzle-kit generate` (writes to `drizzle/`) or hand-write it from the schema.
+- **`drizzle-kit push`:** needs the `ws` package so its `@neondatabase/serverless` driver can open a websocket during push (without it, push fails at "Pulling schema from database"). `ws` is **not** a dependency — install it first with `bun add -d ws @types/ws`, then run `db:push` with `DIRECT_DATABASE_URL` set.
 
 ## 3. GitHub → Vercel
 
