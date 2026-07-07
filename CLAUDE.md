@@ -1,6 +1,6 @@
 # Expense Tracker — Project Memory
 
-Mobile-first, multi-user expense tracker. Users sign up / log in (email + password, 60-day sliding sessions) and log daily expenses in 6 fixed categories (Food, Travel, Rent, Bills, Subscriptions, Other) plus income entries. One dashboard shows spend this month (with a day-progress hint like `7/31`), income this month (green + gain bracket when above the user's income target), a red/green "On pace for" projection, a category donut (labels toggle % ↔ short codes like TRA/SUBS, white halo; overspent categories blink via per-category caps in `category_budgets`; legend links to `/expenses?category=`), recent expenses, and a 6-month income-vs-expense bar chart at the bottom, plus a budget banner. The expenses page filters by month and category chips. Budget defaults to ₹20,000/month (per-user configurable). **Student mode** (`user_settings.hide_income`) hides income tracking everywhere. Typeface: Hanken Grotesk via `next/font`. Money is stored as integer **paise**; all dates are **IST** (Asia/Kolkata).
+Mobile-first, multi-user expense tracker. Users sign up / log in (email + password, 60-day sliding sessions) and log daily expenses in 6 fixed categories (Food, Travel, Rent, Bills, Subscriptions, Other) plus income entries. One dashboard shows spend this month (with a day-progress hint like `7/31`), income this month (green + gain bracket when above the user's income target), a red/green "On pace for" projection, a category donut (labels toggle % ↔ short codes like TRA/SUBS, white halo; overspent categories blink via per-category caps in `category_budgets`; legend links to `/expenses?category=`), recent expenses, and a 6-month income-vs-expense bar chart at the bottom, plus a budget banner. The expenses page filters by month and category chips. Budget defaults to ₹20,000/month (per-user configurable). **Recurring subscriptions** (`subscriptions` table) auto-post one expense per month on their billing day (`src/lib/subscriptions.ts`, lazy no-cron catch-up on dashboard load); pause to stop without deleting history. **Student mode** (`user_settings.hide_income`) hides income tracking everywhere. Typeface: Hanken Grotesk via `next/font`. Money is stored as integer **paise**; all dates are **IST** (Asia/Kolkata).
 
 ## Commands
 
@@ -48,7 +48,7 @@ Mobile-first, multi-user expense tracker. Users sign up / log in (email + passwo
 ## Codebase pointers
 
 - `src/db/index.ts` — dual-driver DB (`DATABASE_URL` → Neon, else PGlite); HMR-cached.
-- `src/db/schema/app.ts` — `expenses`, `incomes`, `user_settings`, `category_budgets` (per-category caps) + `expense_category` enum.
+- `src/db/schema/app.ts` — `expenses`, `incomes`, `user_settings`, `category_budgets` (per-category caps), `subscriptions` (recurring) + `expense_category` enum.
 - `src/db/schema/auth.ts` — Better Auth tables: `user`, `session`, `account`, `verification`.
 - `src/db/schema/index.ts` — re-exports both schema files.
 - `src/lib/currency.ts` — paise ↔ rupee formatting/parsing.
@@ -56,16 +56,23 @@ Mobile-first, multi-user expense tracker. Users sign up / log in (email + passwo
 - `src/lib/dates.ts` — all IST calendar math.
 - `src/lib/budget.ts` — `computeBudget` run-rate projection + `DEFAULT_BUDGET_PAISE`.
 - `src/app/globals.css` — Tailwind v4 `@theme` design tokens.
-- `src/app/(app)/` — dashboard, expenses, add (expense entry), income, settings pages (behind auth).
+- `src/app/(app)/` — dashboard, expenses, add (expense entry), subscriptions (recurring), income, settings pages (behind auth).
+- `src/lib/subscriptions.ts` — `syncDueSubscriptions` (idempotent monthly auto-poster) + `billingDay`.
 - `drizzle.config.ts` — `DIRECT_DATABASE_URL` → Neon DDL, else PGlite.
 - `.env.example` — documents every env var.
 
 ## Budget run-rate rule (see `src/lib/budget.ts`)
 
-`projected = spend × daysInMonth / daysElapsed` (IST day-of-month). Status:
+Fixed costs (rent, bills, subscriptions — `isFixedCategory` in `src/lib/categories.ts`) are paid as a monthly lump, so they must NOT be scaled by the run-rate. Only **variable** spend (food, travel, other) is projected:
+
+`projected = fixedSpend + expectedUnpostedSubs + (variableSpend × daysInMonth / daysElapsed)`
+
+where `expectedUnpostedSubs` = active subscriptions not yet posted this month (so a bill due later still counts before it's paid). Status (uses **actual** logged spend = fixed + variable):
 - **over** (critical) whenever actual spend > budget — even on day 1.
 - **at-risk** (warning) when projection > budget from **day 3 onward** (grace window: days 1–2 show the projection stat but no banner, so one big early purchase doesn't false-alarm).
 - **ok** otherwise.
+
+Income never affects the budget or projection — only the income tile/gain.
 
 ## Detailed docs
 

@@ -43,6 +43,15 @@ Single scrollable, mobile-first column (widens on `lg`). Reads the current IST m
 
 Same structure as expenses, but each entry has a free-text **source** (e.g. "Salary", "Freelance") instead of a category. Add / edit / delete and `?month=` navigation behave identically. In student mode this page redirects to `/dashboard`.
 
+## Subscriptions (`/subscriptions`)
+
+Recurring costs (rent, Wi-Fi, Netflix, …). Each subscription has a **name**, **amount**, **category** (defaults to Subscriptions), and a **billing day-of-month** (1–31, clamped to the month's length). Managed via the "Subs" navbar tab.
+
+- **Auto-posting**: `syncDueSubscriptions` (`src/lib/subscriptions.ts`) runs on every dashboard load — the pragmatic no-cron pattern. For each active subscription whose billing day has arrived this month and hasn't posted yet, it atomically claims the month (conditional UPDATE of `last_posted_month` RETURNING) then inserts one expense (`note = name`). Idempotent: claim-then-insert means a race yields a missed post, never a duplicate; `last_posted_month` guards re-posting within a month.
+- **Pause / resume** (`active` flag toggle): a paused subscription stops auto-posting but keeps its history and definition. Resuming immediately syncs any due post.
+- **Projection**: active subscriptions **not yet posted this month** count as *expected fixed cost* in the "On pace for" projection, so a bill due on the 28th is reflected from day 1 (see Budget alerts).
+- Add / edit (`?edit=<id>`) / delete, all scoped `AND user_id = ?`.
+
 ## Settings (`/settings`)
 
 - **Edit monthly budget** — rupee input parsed to paise via `rupeesToPaise`, validated (> 0), upserted into `user_settings` scoped to the session user, then `revalidatePath('/dashboard')` so the banner reflects the new budget immediately.
@@ -53,13 +62,17 @@ Same structure as expenses, but each entry has a free-text **source** (e.g. "Sal
 
 ## Budget alerts
 
-Computed by `computeBudget` in `src/lib/budget.ts` from `{ spendPaise, budgetPaise, daysElapsed = istDayOfMonth(), daysInMonth }`.
+Computed by `computeBudget` in `src/lib/budget.ts` from `{ variableSpendPaise, fixedSpendPaise, expectedFixedPaise, budgetPaise, daysElapsed = istDayOfMonth(), daysInMonth }`.
 
-- **Projection**: `projected = round(spend × daysInMonth / daysElapsed)`.
-- **`over` (critical)** — whenever `spend > budget`, even on day 1.
-- **`at-risk` (warning)** — when `spend > 0` and `projected > budget` and `daysElapsed ≥ 3`.
+Fixed categories (Rent, Bills, Subscriptions — `isFixedCategory`) are monthly lumps and must **not** be run-rate scaled; only variable spend (Food, Travel, Other) is.
+
+- **Projection**: `projected = fixedSpend + expectedFixedPaise + round(variableSpend × daysInMonth / daysElapsed)`, where `expectedFixedPaise` = active subscriptions not yet posted this month. Example (day 8/31, ₹3,528 fixed logged + ₹1,500 sub due later + ₹2,050 variable) → `3528 + 1500 + round(2050 × 31/8)` = **₹12,971**, vs ₹21,612 under the old scale-everything formula.
+- Status uses **actual** logged spend (`fixedSpend + variableSpend`):
+- **`over` (critical)** — whenever actual spend `> budget`, even on day 1.
+- **`at-risk` (warning)** — when actual spend `> 0` and `projected > budget` and `daysElapsed ≥ 3`.
 - **`ok`** — otherwise (no banner).
 - **Grace window (days 1–2)**: a projection over budget does **not** raise the banner; the projected figure still appears as a dashboard stat.
+- **Income never affects the budget or projection** — it only drives the income tile and its gain bracket.
 
 ### Banner copy
 

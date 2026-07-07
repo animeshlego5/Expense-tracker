@@ -1,9 +1,16 @@
 import { and, desc, eq, gte, lt, sql, sum } from "drizzle-orm";
 import { db } from "@/db";
-import { categoryBudgets, expenses, incomes, userSettings } from "@/db/schema";
+import {
+  categoryBudgets,
+  expenses,
+  incomes,
+  subscriptions,
+  userSettings,
+} from "@/db/schema";
 import { requireUser } from "@/lib/session";
 import { formatPaise } from "@/lib/currency";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, isFixedCategory } from "@/lib/categories";
+import { syncDueSubscriptions } from "@/lib/subscriptions";
 import {
   daysInMonth,
   istCurrentMonth,
@@ -25,6 +32,10 @@ export default async function DashboardPage() {
 
   const month = istCurrentMonth();
   const { start, end } = monthRange(month);
+
+  // Post any due recurring subscriptions before reading this month's expenses,
+  // so the dashboard reflects them immediately (the no-cron catch-up pattern).
+  await syncDueSubscriptions(userId);
 
   // 6-month window (oldest first) for the tracker.
   const months = trailingMonths(6, month);
@@ -50,6 +61,7 @@ export default async function DashboardPage() {
     expenseSeriesRows,
     incomeSeriesRows,
     categoryBudgetRows,
+    activeSubRows,
   ] = await Promise.all([
     db.select({ total: sum(expenses.amountPaise) }).from(expenses).where(monthExpenses),
     db
@@ -110,6 +122,15 @@ export default async function DashboardPage() {
       .select()
       .from(categoryBudgets)
       .where(eq(categoryBudgets.userId, userId)),
+    db
+      .select({
+        amountPaise: subscriptions.amountPaise,
+        lastPostedMonth: subscriptions.lastPostedMonth,
+      })
+      .from(subscriptions)
+      .where(
+        and(eq(subscriptions.userId, userId), eq(subscriptions.active, true))
+      ),
   ]);
 
   const spendPaise = Number(expenseTotalRows[0]?.total ?? 0);
@@ -157,10 +178,25 @@ export default async function DashboardPage() {
     expensePaise: expenseByMonth.get(m) ?? 0,
   }));
 
+  // Split logged spend into fixed (rent/bills/subscriptions — added flat) and
+  // variable (food/travel/other — run-rate projected). Expected fixed cost =
+  // active subscriptions that haven't posted yet this month, so a bill due
+  // later in the month is counted in the projection before it's paid.
+  let fixedSpendPaise = 0;
+  for (const row of categoryRows) {
+    if (isFixedCategory(row.category)) fixedSpendPaise += Number(row.total ?? 0);
+  }
+  const variableSpendPaise = spendPaise - fixedSpendPaise;
+  const expectedFixedPaise = activeSubRows
+    .filter((s) => s.lastPostedMonth !== month)
+    .reduce((sum, s) => sum + s.amountPaise, 0);
+
   const daysElapsed = istDayOfMonth();
   const totalDays = daysInMonth(month);
   const budget = computeBudget({
-    spendPaise,
+    variableSpendPaise,
+    fixedSpendPaise,
+    expectedFixedPaise,
     budgetPaise,
     daysElapsed,
     daysInMonth: totalDays,

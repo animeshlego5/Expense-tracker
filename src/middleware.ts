@@ -12,6 +12,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/expenses") ||
     pathname.startsWith("/add") ||
     pathname.startsWith("/income") ||
+    pathname.startsWith("/subscriptions") ||
     pathname.startsWith("/settings");
 
   const isAuthPage =
@@ -34,6 +35,7 @@ export const config = {
     "/expenses/:path*",
     "/add/:path*",
     "/income/:path*",
+    "/subscriptions/:path*",
     "/settings/:path*",
     "/login",
     "/signup",

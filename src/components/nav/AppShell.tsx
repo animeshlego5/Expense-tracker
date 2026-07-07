@@ -66,10 +66,22 @@ function PlusIcon(props: IconProps) {
   );
 }
 
+function RepeatIcon(props: IconProps) {
+  return (
+    <svg {...iconBase(props)}>
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
+}
+
 const allItems = [
   { href: "/dashboard", label: "Dashboard", Icon: HouseIcon },
   { href: "/expenses", label: "Expenses", Icon: ReceiptIcon },
   { href: "/add", label: "Add", Icon: PlusIcon },
+  { href: "/subscriptions", label: "Subs", Icon: RepeatIcon },
   { href: "/income", label: "Income", Icon: BanknoteIcon },
   { href: "/settings", label: "Settings", Icon: GearIcon },
 ];

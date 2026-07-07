@@ -84,7 +84,35 @@ export const categoryBudgets = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.category] })]
 );
 
+// Recurring subscriptions. Each active row auto-posts one expense per month
+// (see src/lib/subscriptions.ts). `lastPostedMonth` ('YYYY-MM') is the last
+// month this subscription materialized an expense — used to make posting
+// idempotent so a subscription never double-posts within a month.
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // "Netflix", "Wi-Fi", ...
+    amountPaise: integer("amount_paise").notNull(), // > 0, enforced by zod
+    category: expenseCategory("category").notNull().default("subscriptions"),
+    dayOfMonth: integer("day_of_month").notNull(), // 1–31; clamped to month length
+    active: boolean("active").notNull().default(true),
+    lastPostedMonth: text("last_posted_month"), // 'YYYY-MM' or null (never posted)
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("subscriptions_user_idx").on(t.userId)]
+);
+
 export type Expense = typeof expenses.$inferSelect;
 export type Income = typeof incomes.$inferSelect;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type CategoryBudget = typeof categoryBudgets.$inferSelect;
+export type Subscription = typeof subscriptions.$inferSelect;
